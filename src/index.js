@@ -1,53 +1,59 @@
 import './sass/main.scss';
-import fetchCountries from './js/fetchCountries';
-import refs from './js/refs';
-import multiplyRender from './templates/multiplyRender.hbs';
-import singleRender from './templates/singleRender.hbs';
-import debounce from 'lodash.debounce';
-import toastr from 'toastr';
-import toastrOptions from './js/toaster/options';
+import countriesApi from './js/fetchCountries';
+import countryTpl from './templates/markupCountry.hbs';
+import listContriesTpl from './templates/markupListContries.hbs';
 
-refs.input.addEventListener(
-  'input',
-  debounce(e => {
-    inputHeandler(e.target.value);
-  }, 500),
-);
+import { info, error } from '@pnotify/core';
+import '@pnotify/core/dist/PNotify.css';
+import '@pnotify/core/dist/BrightTheme.css';
 
-function inputHeandler(inputValue) {
-  if (inputValue.length < 1) {
-    clearUI();
-    return;
-  }
-  fetchCountries(inputValue)
-    .then(data => render(data))
-    .catch(err => {
-      warning(err);
-      clearUI();
-    });
+const debounce = require('lodash.debounce');
+let searchedCountry = '';
+
+const refs = {
+  input: document.querySelector('.js-search-input'),
+  countriesContainer: document.querySelector('.js-countries-container'),
+};
+
+refs.input.addEventListener('input', debounce(onSearch, 500));
+
+function onSearch() {
+  clearSearch();
+  searchedCountry = refs.input.value;
+  countriesApi(searchedCountry)
+    .then(markupResult)
+    .catch(err => console.log(err));
 }
 
-function render(data) {
-  clearUI();
-  if (data.length === 1) {
-    refs.container.insertAdjacentHTML('afterbegin', singleRender(data));
-    toastr.clear();
-    refs.container.classList.add('countries');
-  } else if (data.length > 10) {
-    warning('Too many results. Please specify your query');
+function clearSearch() {
+  refs.countriesContainer.innerHTML = '';
+}
+
+function markupResult(countries) {
+  if (countries.length === 1) {
+    clearSearch();
+    markupContries(countryTpl, countries);
+  } else if (countries.length > 1 && countries.length <= 10) {
+    clearSearch();
+    markupContries(listContriesTpl, countries);
+  } else if (countries.length > 10) {
+    outputInfo(
+      error,
+      'To many matches found. Please enter a more specific query!',
+    );
   } else {
-    refs.container.insertAdjacentHTML('afterbegin', multiplyRender(data));
-    toastr.clear();
-    refs.container.classList.add('countries');
+    outputInfo(info, 'No matches found!');
   }
 }
 
-function warning(message) {
-  toastr.warning(message);
-  toastr.options = toastrOptions;
+function outputInfo(typeInfo, text) {
+  typeInfo({
+    text: `${text}`,
+    delay: 1400,
+    closerHover: true,
+  });
 }
 
-function clearUI() {
-  refs.container.innerHTML = '';
-  refs.container.classList.remove('countries');
+function markupContries(tpl, countries) {
+  refs.countriesContainer.insertAdjacentHTML('beforeend', tpl(countries));
 }

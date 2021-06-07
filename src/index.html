@@ -15,11 +15,18 @@
     <!-- Так добавляются фрагменты в главные HTML-файлы страниц. -->
     <include src="./partials/example.html"></include>
     
-    <form name="form">
-      <input type="text" class="input" placeholder="Enter country name" autocomplete="off" />
-    </form>
-    <div id="conteiner"></div>
+    <div class="container">
+      <input
+        class="search-input js-search-input"
+        type="text"
+        placeholder="Enter any country"
+        name="search"
+        autocomplete="off"
+      />
 
+      <div class="countries js-countries-container"></div>
+    </div>
+    
     <!-- Скрипт идёт последним в разметке. В нём уже подключен главный SASS-файл. -->
     <script src="./index.js"></script>
   </body>
